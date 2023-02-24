@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import SampleData from "../resources/SampleData";
+import SampleData from "../resources/SampleData.json";
 import Table from "./Table";
 import { TabStrip, TabStripTab } from "@progress/kendo-react-layout";
 
 function Main() {
-  const [data, setData] = useState();
+  const importedData = SampleData;
+  const [data, setData] = useState(importedData);
   const [selected, setSelected] = useState(0);
   const tabs = ["items", "categories", "itemTypes", "manufacturers"];
 
@@ -21,16 +22,20 @@ function Main() {
     setData(fetchedData);
   }, []);
 
-  const tabStrips = tabs.map((tabName) => (
-    <TabStripTab title={capitalizeFirstLetter(tabName)} key={tabName}>
-      <Table tableName={tabName} tableData={data} />
+  const tabStrips = Object.keys(data).map((item, index) => (
+    <TabStripTab title={capitalizeFirstLetter(item)} key={item}>
+      <Table tableName={item} tableData={data[item]} data={data} setData={setData} />
     </TabStripTab>
   ));
-
-  console.log(data);
   return (
-    <div className="card-component">
-      <TabStrip selected={selected} onSelect={handleSelect}>
+    <div
+      onClick={() => {
+        console.log(data, "<-- data changed");
+      }}
+      className="card-component"
+      style={{ width: "100%" }}
+    >
+      <TabStrip style={{ width: "100%" }} selected={selected} onSelect={handleSelect}>
         {tabStrips}
       </TabStrip>
     </div>
