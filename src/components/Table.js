@@ -5,6 +5,10 @@ import { DropDownList } from "@progress/kendo-react-dropdowns";
 import { GridPDFExport } from "@progress/kendo-react-pdf";
 import { process } from "@progress/kendo-data-query";
 import DetailComponent from "./detailComponent";
+import { MyCommandCell } from "./myCommandCell";
+
+
+import { insertItem, getItems, updateItem, deleteItem } from "./services";
 
 import { ExcelExport } from "@progress/kendo-react-excel-export";
 import {
@@ -22,7 +26,101 @@ const intl = new IntlService("en");
 const Table = (props) => {
   const { tableData, data, setData, tableName } = props;
   // console.log(Object.keys(tableData), "<=== tb");
+  const editField = "inEdit";
+  const generateId = (data) =>
+  data.reduce((acc, current) => Math.max(acc, current.ProductID), 0) + 1;
+ const insertItem = (item) => {
+  item.ProductID = generateId(data);
+  item.inEdit = false;
+  data.unshift(item);
+  return data;
+};
+ const getItems = () => {
+  return data;
+};
+ const updateItem = (item) => {
+  let index = data.findIndex((record) => record.ProductID === item.ProductID);
+  data[index] = item;
+  return data;
+};
+ const deleteItem = (item) => {
+  let index = data.findIndex((record) => record.ProductID === item.ProductID);
+  data.splice(index, 1);
+  return data;
+};
   console.log(data[tableName], "<=== data");
+  const CommandCell = (props) => (
+    <MyCommandCell
+      {...props}
+      edit={enterEdit}
+      remove={remove}
+      add={add}
+      discard={discard}
+      update={update}
+      cancel={cancel}
+      editField={editField}
+    />
+  );
+  const remove = (dataItem) => {
+    const newData = deleteItem(dataItem);
+    setData(newData);
+  };  
+  const add = (dataItem) => {
+    dataItem.inEdit = true;
+    const newData = insertItem(dataItem);
+    setData(newData);
+  };
+  const update = (dataItem) => {
+    dataItem.inEdit = false;
+    const newData = updateItem(dataItem);
+    setData(newData);
+  };
+  const discard = (dataItem) => {
+    const newData = [...data];
+    newData.splice(0, 1);
+    setData(newData);
+  };
+  const cancel = (dataItem) => {
+    const originalItem = getItems().find(
+      (p) => p.ProductID === dataItem.ProductID
+    );
+    const newData = data.map((item) =>
+      item.ProductID === originalItem.ProductID ? originalItem : item
+    );
+    setData(newData);
+  };
+  const enterEdit = (dataItem) => {
+    let newData = data.map((item) =>
+      item.ProductID === dataItem.ProductID
+        ? {
+            ...item,
+            inEdit: true,
+          }
+        : item
+    );
+    setData(newData);
+  };
+  const itemChange = (event) => {
+    const field = event.field || "";
+    const newData = data.map((item) =>
+      item.ProductID === event.dataItem.ProductID
+        ? {
+            ...item,
+            [field]: event.value,
+          }
+        : item
+    );
+    setData(newData);
+  };
+  const addNew = () => {
+    const newDataItem = {
+      inEdit: true,
+      Discontinued: false,
+      ProductID: new Date().getMilliseconds(),
+    };
+    setData([newDataItem, ...data]);
+  };
+
   // console.log(tableData, "<=== tb open");
   const [dataState, setDataState] = React.useState({
     skip: 0,
@@ -94,6 +192,8 @@ const Table = (props) => {
           width: "100%",
         }}
         sortable={true}
+        onItemChange={itemChange}
+      editField={editField}
         filterable={true}
         groupable={true}
         reorderable={true}
